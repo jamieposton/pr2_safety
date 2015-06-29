@@ -145,7 +145,7 @@ class RobotDriver{
 			goal.min_duration = ros::Duration(0.75);
 
 			//and go no faster than 1 rad/s
-			goal.max_velocity = 0.5;
+			goal.max_velocity = 0.4;
 
 			//send the goal
 			point_head_client_->sendGoal(goal);
@@ -163,125 +163,78 @@ class RobotDriver{
 				lookAt("base_link", 5.0, 10.0, -2.0);
 		}
 
-		pr2_controllers_msgs::JointTrajectoryGoal armExtensionTrajectory(){
-			//our goal variable
-		  pr2_controllers_msgs::JointTrajectoryGoal goal;
+		void MoveArm(float* pos, float time){
 
-		  // First, the joint names, which apply to all waypoints
-		  goal.trajectory.joint_names.push_back("r_shoulder_pan_joint");
-		  goal.trajectory.joint_names.push_back("r_shoulder_lift_joint");
-		  goal.trajectory.joint_names.push_back("r_upper_arm_roll_joint");
-		  goal.trajectory.joint_names.push_back("r_elbow_flex_joint");
-		  goal.trajectory.joint_names.push_back("r_forearm_roll_joint");
-		  goal.trajectory.joint_names.push_back("r_wrist_flex_joint");
-		  goal.trajectory.joint_names.push_back("r_wrist_roll_joint");
+			pr2_controllers_msgs::JointTrajectoryGoal goal;
 
-		  // We will have four waypoints in this goal trajectory
-		  goal.trajectory.points.resize(3);
+			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
 
-		  // First trajectory point
-		  // Positions
-		  int ind = 0;
-		  goal.trajectory.points[ind].positions.resize(7);
-		  goal.trajectory.points[ind].positions[0] = 0.0; //Should always be 0.0
-		  goal.trajectory.points[ind].positions[1] = -6.0;
-		  goal.trajectory.points[ind].positions[2] = -3.2; //Shouldn't change
-		  goal.trajectory.points[ind].positions[3] = -1.5;
-		  goal.trajectory.points[ind].positions[4] = 0.0; //Shouldn't change
-		  goal.trajectory.points[ind].positions[5] = 2.0;
-		  goal.trajectory.points[ind].positions[6] = 0.0; //Shouldn't change
+			// First, the joint names, which apply to all waypoints
+			goal.trajectory.joint_names.push_back("r_shoulder_pan_joint");
+			goal.trajectory.joint_names.push_back("r_shoulder_lift_joint");
+			goal.trajectory.joint_names.push_back("r_upper_arm_roll_joint");
+			goal.trajectory.joint_names.push_back("r_elbow_flex_joint");
+			goal.trajectory.joint_names.push_back("r_forearm_roll_joint");
+			goal.trajectory.joint_names.push_back("r_wrist_flex_joint");
+			goal.trajectory.joint_names.push_back("r_wrist_roll_joint");
 
-		  // Velocities
-		  goal.trajectory.points[ind].velocities.resize(7);
-		  for (size_t j = 0; j < 7; ++j){
-		    goal.trajectory.points[ind].velocities[j] = 0.0;
-		  }
-		  // To be reached 1.5 seconds after starting along the trajectory
-		  goal.trajectory.points[ind].time_from_start = ros::Duration(1.5);
+			// We will have three waypoints in this goal trajectory
+			goal.trajectory.points.resize(1);
 
-		  // Second trajectory point
-		  // Positions
-		  ind += 1;
-		  goal.trajectory.points[ind].positions.resize(7);
-		  goal.trajectory.points[ind].positions[0] = 0.0; //Should always be 0.0
-		  goal.trajectory.points[ind].positions[1] = -6.0;
-		  goal.trajectory.points[ind].positions[2] = -3.2; //Shouldn't change
-		  goal.trajectory.points[ind].positions[3] = 1.5;
-		  goal.trajectory.points[ind].positions[4] = 0.0; //Shouldn't change
-		  goal.trajectory.points[ind].positions[5] = 4.0;
-		  goal.trajectory.points[ind].positions[6] = 0.0; //Shouldn't change
+			// Positions
+			goal.trajectory.points[0].positions.resize(7);
+			for(int i = 0; i < 7; i++){
+				goal.trajectory.points[0].positions[i] = pos[i]; 
+			}
 
-		  // Velocities
-		  goal.trajectory.points[ind].velocities.resize(7);
-		  for (size_t j = 0; j < 7; ++j){
-		    goal.trajectory.points[ind].velocities[j] = 0.0;
-		  }
-		  // To be reached 1.5 seconds after starting along the trajectory
-		  goal.trajectory.points[ind].time_from_start = ros::Duration(1.5);
+			// Velocities
+			goal.trajectory.points[0].velocities.resize(7);
+			for (size_t j = 0; j < 7; ++j){
+				goal.trajectory.points[0].velocities[j] = 0.0;
+			}
+			// To be reached 1.5 seconds after starting along the trajectory
+			goal.trajectory.points[0].time_from_start = ros::Duration(time);
 
-		  // Second trajectory point
-		  // Positions
-		  ind += 1;
-		  goal.trajectory.points[ind].positions.resize(7);
-		  goal.trajectory.points[ind].positions[0] = 0.0; //Should always be 0.0
-		  goal.trajectory.points[ind].positions[1] = 0.0;
-		  goal.trajectory.points[ind].positions[2] = -3.2; //Shouldn't change
-		  goal.trajectory.points[ind].positions[3] = 0.5;
-		  goal.trajectory.points[ind].positions[4] = 0.0; //Shouldn't change
-		  goal.trajectory.points[ind].positions[5] = 0.0;
-		  goal.trajectory.points[ind].positions[6] = 0.0; //Shouldn't change
+			traj_client_->sendGoal(goal);
 
-		  // Velocities
-		  goal.trajectory.points[ind].velocities.resize(7);
-		  for (size_t j = 0; j < 7; ++j){
-		    goal.trajectory.points[ind].velocities[j] = 0.0;
-		  }
-		  // To be reached 1.5 seconds after starting along the trajectory
-		  goal.trajectory.points[ind].time_from_start = ros::Duration(1.5);
+			//wait for it to get there (abort after 2 secs to prevent getting stuck)
+			traj_client_->waitForResult(ros::Duration(time+1.0));
+		}
 
-		  //we are done; return the goal
-		  return goal;
- 	 }
+		void MoveArmL(float* pos, float time){
 
-		pr2_controllers_msgs::JointTrajectoryGoal armExtensionTrajectoryL(){
-			//our goal variable
-		  pr2_controllers_msgs::JointTrajectoryGoal goal;
+			pr2_controllers_msgs::JointTrajectoryGoal goal;
 
-		  // First, the joint names, which apply to all waypoints
-		  goal.trajectory.joint_names.push_back("l_shoulder_pan_joint");
-		  goal.trajectory.joint_names.push_back("l_shoulder_lift_joint");
-		  goal.trajectory.joint_names.push_back("l_upper_arm_roll_joint");
-		  goal.trajectory.joint_names.push_back("l_elbow_flex_joint");
-		  goal.trajectory.joint_names.push_back("l_forearm_roll_joint");
-		  goal.trajectory.joint_names.push_back("l_wrist_flex_joint");
-		  goal.trajectory.joint_names.push_back("l_wrist_roll_joint");
+			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
 
-		  // We will have four waypoints in this goal trajectory
-		  goal.trajectory.points.resize(1);
+			// First, the joint names, which apply to all waypoints
+			goal.trajectory.joint_names.push_back("l_shoulder_pan_joint");
+			goal.trajectory.joint_names.push_back("l_shoulder_lift_joint");
+			goal.trajectory.joint_names.push_back("l_upper_arm_roll_joint");
+			goal.trajectory.joint_names.push_back("l_elbow_flex_joint");
+			goal.trajectory.joint_names.push_back("l_forearm_roll_joint");
+			goal.trajectory.joint_names.push_back("l_wrist_flex_joint");
+			goal.trajectory.joint_names.push_back("l_wrist_roll_joint");
 
-		  // First trajectory point
-		  // Positions
-		  int ind = 0;
-		  goal.trajectory.points[ind].positions.resize(7);
-		  goal.trajectory.points[ind].positions[0] = 0.0; //Should always be 0.0
-		  goal.trajectory.points[ind].positions[1] = 6.0;
-		  goal.trajectory.points[ind].positions[2] = 1.5; //Shouldn't change
-		  goal.trajectory.points[ind].positions[3] = -1.5;
-		  goal.trajectory.points[ind].positions[4] = 0.5; //Shouldn't change
-		  goal.trajectory.points[ind].positions[5] = 2.0;
-		  goal.trajectory.points[ind].positions[6] = 0.0; //Shouldn't change
+			// We will have three waypoints in this goal trajectory
+			goal.trajectory.points.resize(1);
 
-		  // Velocities
-		  goal.trajectory.points[ind].velocities.resize(7);
-		  for (size_t j = 0; j < 7; ++j){
-		    goal.trajectory.points[ind].velocities[j] = 0.0;
-		  }
-		  // To be reached 1.5 seconds after starting along the trajectory
-		  goal.trajectory.points[ind].time_from_start = ros::Duration(1.5);
+			// Positions
+			goal.trajectory.points[0].positions.resize(7);
+			for(int i = 0; i < 7; i++){
+				goal.trajectory.points[0].positions[i] = pos[i]; 
+			}
 
-		  //we are done; return the goal
-		  return goal;
- 	 }
+			// Velocities
+			goal.trajectory.points[0].velocities.resize(7);
+			for (size_t j = 0; j < 7; ++j){
+				goal.trajectory.points[0].velocities[j] = 0.0;
+			}
+			goal.trajectory.points[0].time_from_start = ros::Duration(time);
+			traj_client_L->sendGoal(goal);
+
+			traj_client_L->waitForResult(ros::Duration(time+1.0));
+		}
 
   //! Returns the current state of the action
   actionlib::SimpleClientGoalState getState(){
@@ -293,7 +246,7 @@ class RobotDriver{
   }
 
   //! Loop forever while sending commands
-  bool moveit(pr2_controllers_msgs::JointTrajectoryGoal goal, pr2_controllers_msgs::JointTrajectoryGoal goalL){
+  bool moveit(){
 			//we will be sending commands of type "twist" for the base
 			geometry_msgs::Twist base_cmd;
 
@@ -306,12 +259,14 @@ class RobotDriver{
 
 			while(nh_.ok()){
 		
-				//Start the arm trajectory 1 second from now
-				goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(1.0);
-				traj_client_->sendGoal(goal);
-				traj_client_L->sendGoal(goalL);
-				cout << "Sent Goal Trajectory" << endl;
-				ros::Duration(4.0).sleep(); // sleep
+				float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
+				MoveArmL(temp, 1.5);
+				float tempa[7] = {0.0, -6.0, -3.2, -1.5, 0.0, 2.0, 0.0};
+				MoveArm(tempa, 1.5);
+				float tempb[7] = {0.0, -6.0, -3.2, 1.5, 0.0, 4.0, 0.0};
+				MoveArm(tempb, 1.5);
+				float tempc[7] = {0.0, 0.0, -3.2, 0.5, 0.0, 0.0, 0.0};
+				MoveArm(tempc, 1.5);
 
 				shakeHead(1);
 
@@ -350,7 +305,7 @@ int main(int argc, char** argv){
   torso.down();
 
   RobotDriver driver(nh);
-  driver.moveit(driver.armExtensionTrajectory(), driver.armExtensionTrajectoryL());
+  driver.moveit();
 
 	return 0;
 }
