@@ -145,22 +145,13 @@ class RobotDriver{
 			goal.min_duration = ros::Duration(0.75);
 
 			//and go no faster than 1 rad/s
-			goal.max_velocity = 0.4;
+			goal.max_velocity = 0.75;
 
 			//send the goal
 			point_head_client_->sendGoal(goal);
 
 			//wait for it to get there (abort after 2 secs to prevent getting stuck)
 			point_head_client_->waitForResult(ros::Duration(1));
-		}
-
-		//! Shake the head from left to right n times  
-		void shakeHead(int n)
-		{
-				//Looks at a point forward (x=5m), slightly right (y=-1m), and 1.2m up
-				lookAt("base_link", 5.0, 10.0, 1.5);
-
-				lookAt("base_link", 5.0, 10.0, -2.0);
 		}
 
 		void MoveArm(float* pos, float time){
@@ -257,23 +248,34 @@ class RobotDriver{
 			base_cmd.linear.x = base_cmd.linear.y = base_cmd.angular.z = 0;
 			cmd_vel_pub_.publish(base_cmd);
 
+			float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
+			MoveArmL(temp, 1.5);
+
+			int n = 0;
+
 			while(nh_.ok()){
 		
-				float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
-				MoveArmL(temp, 1.5);
+				if(n%3 == 2){
+					lookAt("base_link", 5.0, 0.0, -2.0);
+				}
+
 				float tempa[7] = {0.0, -6.0, -3.2, -1.5, 0.0, 2.0, 0.0};
 				MoveArm(tempa, 1.5);
 				float tempb[7] = {0.0, -6.0, -3.2, 1.5, 0.0, 4.0, 0.0};
 				MoveArm(tempb, 1.5);
+
+				if(n%3 == 2){
+					lookAt("base_link", 10.0, 0.0, -2.0);
+				}
+
 				float tempc[7] = {0.0, 0.0, -3.2, 0.5, 0.0, 0.0, 0.0};
 				MoveArm(tempc, 1.5);
 
-				shakeHead(1);
-
-				//Looks at a point forward (x=5m), slightly left (y=1m), and 1.2m up
+				lookAt("base_link", 5.0, -10.0, 1.2);
+				lookAt("base_link", 5.0, -10.0, -2.0);
 				lookAt("base_link", 5.0, 0.0, -2.0);
 
-				base_cmd.linear.y = 1.0;
+				base_cmd.linear.y = -1.0;
 				for(int i = 0; i < 10; i++){	
 					cmd_vel_pub_.publish(base_cmd);
 					ros::Duration(0.1).sleep(); // sleep
