@@ -22,6 +22,9 @@ using namespace std;
 //The error it's giving has something to do with the app_manager
 //Located in pr2_apps/pr2_app_manager. Not sure how to add that.
 
+//06.26 All values trying to be passed into the addpoint function return 0? I think?
+
+
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // Our Action interface type, provided as a typedef for convenience
@@ -108,10 +111,10 @@ class RobotDriver{
 
 			// wait for action server to come up
 			while(!traj_client_->waitForServer(ros::Duration(5.0))){
-			 ROS_INFO("Waiting for the joint_trajectory_action server");
+				ROS_INFO("Waiting for the joint_trajectory_action server");
 			}
 			while(!traj_client_L->waitForServer(ros::Duration(5.0))){
-			 ROS_INFO("Waiting for the joint_trajectory_action server");
+				ROS_INFO("Waiting for the joint_trajectory_action server");
 			}
 			//wait for head controller action server to come up 
 			while(!point_head_client_->waitForServer(ros::Duration(5.0))){
@@ -237,48 +240,92 @@ class RobotDriver{
   }
 
   //! Loop forever while sending commands
-  bool moveit(){
+  bool moveit(int* choice){
 			//we will be sending commands of type "twist" for the base
 			geometry_msgs::Twist base_cmd;
 
 			cout << "Test Running. Hit Ctrl+C to End. " << endl;
-			ros::Duration(2.0).sleep(); // sleep for 3 seconds
+			//ros::Duration(2.0).sleep(); // sleep for 2 seconds
 
 			//Initial values for base
 			base_cmd.linear.x = base_cmd.linear.y = base_cmd.angular.z = 0;
 			cmd_vel_pub_.publish(base_cmd);
 
 			float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
-			MoveArmL(temp, 1.5);
+			if(choice[1] == 1){
+				MoveArmL(temp, 1.5);
+			}
 
 			int n = 0;
 
 			while(nh_.ok()){
-		
-				if(n%3 == 2){
-					lookAt("base_link", 5.0, 0.0, -2.0);
+
+
+				if(n%3 == 2 && choice[2] == 1){
+					if(choice[3] == 1){
+						lookAt("base_link", 5.0, 10.0, -2.0);
+					}
+					else{
+						lookAt("base_link", 5.0, 0.0, -2.0);
+					}
 				}
 
-				float tempa[7] = {0.0, -6.0, -3.2, -1.5, 0.0, 2.0, 0.0};
-				MoveArm(tempa, 1.5);
-				float tempb[7] = {0.0, -6.0, -3.2, 1.5, 0.0, 4.0, 0.0};
-				MoveArm(tempb, 1.5);
-
-				if(n%3 == 2){
-					lookAt("base_link", 10.0, 0.0, -2.0);
+				if(choice[1] == 1){
+					if(choice[3] == 1){
+						float tempa[7] = {0.5, 0.0, -1.6, 3.5, 0.0, 0.0, 1.5};
+						MoveArm(tempa, 3.0);
+					}
+					else{
+						float tempa[7] = {0.0, -6.0, -3.2, -1.5, 0.0, 2.0, 0.0};
+						MoveArm(tempa, 1.5);
+						float tempb[7] = {0.0, -6.0, -3.2, 1.5, 0.0, 4.0, 0.0};
+						MoveArm(tempb, 1.5);
+					}
 				}
 
-				float tempc[7] = {0.0, 0.0, -3.2, 0.5, 0.0, 0.0, 0.0};
-				MoveArm(tempc, 1.5);
+				if(n%3 == 2 && choice[2] == 1){
+					if(choice[3] == 1){
+						lookAt("base_link", 5.0, -10.0, -2.0);
+					}
+					else{
+						lookAt("base_link", 10.0, 0.0, -2.0);
+					}
+				}
 
-				lookAt("base_link", 5.0, -10.0, 1.2);
-				lookAt("base_link", 5.0, -10.0, -2.0);
-				lookAt("base_link", 5.0, 0.0, -2.0);
+				if(choice [1] == 1){
+					if(choice[3] == 1){
+						float tempc[7] = {-1.5, 0.0, -1.6, -1.5, 0.0, 2.0, 1.5};
+						MoveArm(tempc, 3.0);
+					}
+					else{
+						float tempc[7] = {0.0, 0.0, -3.2, 0.5, 0.0, 0.0, 0.0};
+						MoveArm(tempc, 1.5);
+					}
+				}
 
-				base_cmd.linear.y = -1.0;
-				for(int i = 0; i < 10; i++){	
-					cmd_vel_pub_.publish(base_cmd);
-					ros::Duration(0.1).sleep(); // sleep
+				if(choice[2] == 1){
+					if(choice[3] == 1){
+						lookAt("base_link", 5.0, 10.0, 1.2);
+						lookAt("base_link", 5.0, 10.0, -2.0);
+						lookAt("base_link", 5.0, 0.0, -2.0);
+					}
+					else{
+						lookAt("base_link", 5.0, -10.0, 1.2);
+						lookAt("base_link", 5.0, -10.0, -2.0);
+						lookAt("base_link", 5.0, 0.0, -2.0);
+					}
+					
+				}
+
+				if(choice[0] == 1){
+					base_cmd.linear.y = 1.0;
+					if(choice[3] == 0){
+						base_cmd.linear.y = -1.0;
+					}
+					for(int i = 0; i < 15; i++){	
+						cmd_vel_pub_.publish(base_cmd);
+						ros::Duration(0.1).sleep(); // sleep
+					}
 				}
 				//ros::Duration(1.0).sleep(); // sleep
 				/*
@@ -292,23 +339,50 @@ class RobotDriver{
 				*/
 				base_cmd.linear.y = 0;
 				cmd_vel_pub_.publish(base_cmd);
+				if(choice[1] == 0){
+					ros::Duration(3.0).sleep();
+				}
+
+				n++;
 			}
     return true;
   }
 };
 
 int main(int argc, char** argv){
-  //init the ROS node
-  ros::init(argc, argv, "robot_driver");
-  ros::NodeHandle nh;
+	//init the ROS node
+	int choice[4] = {0,0,0,0};
+	char temp;
+	cout << "Run base? y/n" << endl;
+	cin >> temp;
+	if(temp == 'y'){
+		choice[0] = 1;
+	}
+	cout << "Run arm? y/n" << endl;
+	cin >> temp;
+	if(temp == 'y'){
+		choice[1] = 1;
+	}
+	cout << "Run head? y/n" << endl;
+	cin >> temp;
+	if(temp == 'y'){
+		choice[2] = 1;
+	}
+	cout << "Vertical or horizontal arm motions? v/h" << endl;
+	cin >> temp;
+	if(temp == 'h'){
+		choice[3] = 1;
+	}
 
-  Torso torso;
-  
-  torso.down();
+	ros::init(argc, argv, "robot_driver");
+	ros::NodeHandle nh;
 
-  RobotDriver driver(nh);
-  driver.moveit();
+	Torso torso;
+
+	torso.down();
+
+	RobotDriver driver(nh);
+	driver.moveit(choice);
 
 	return 0;
 }
-
