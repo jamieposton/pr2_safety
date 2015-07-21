@@ -1,0 +1,18 @@
+<package>
+  <description brief="teleop_decon">
+
+     teleop_decon
+
+  </description>
+  <author>jamie poston</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/teleop_decon</url>
+  <depend package="actionlib"/>
+  <depend package="geometry_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="pr2_controllers_msgs"/>
+
+</package>
+
+
