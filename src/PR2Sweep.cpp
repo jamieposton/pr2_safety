@@ -349,31 +349,50 @@ class RobotDriver{
   }
 };
 
+void printHelp(){
+	cout << "Possible options" << endl;
+	cout << "b to run the base" << endl;
+	cout << "a to run the arms" << endl;
+	cout << "h to run the head" << endl;
+	cout << "o to sweep horizontally" << endl;
+	cout << "default is to sweep vertically" << endl;
+}
+
 int main(int argc, char** argv){
 	//init the ROS node
 	int choice[4] = {0,0,0,0};
-	char temp;
-	cout << "Run base? y/n" << endl;
-	cin >> temp;
-	if(temp == 'y'){
-		choice[0] = 1;
-	}
-	cout << "Run arm? y/n" << endl;
-	cin >> temp;
-	if(temp == 'y'){
-		choice[1] = 1;
-	}
-	cout << "Run head? y/n" << endl;
-	cin >> temp;
-	if(temp == 'y'){
-		choice[2] = 1;
-	}
-	cout << "Vertical or horizontal arm motions? v/h" << endl;
-	cin >> temp;
-	if(temp == 'h'){
-		choice[3] = 1;
+	//First is base
+	//Second is arm
+	//Third is head
+	//Fourth is vertical or horizontal arm sweeps
+
+	if(argc <= 1){
+		cout << "Error: not enough arguments" << endl;
+		printHelp();
+		return 0;
 	}
 
+	//Currently doesn't recognize when multiple arguments are given
+	for(int i = 1; i < argc; i++){
+		switch(argv[i][0]){
+			case 'b':
+				choice[0] = 1;
+				break;
+			case 'a':
+				choice[1] = 1;
+				break;
+			case 'h':
+				choice[2] = 1;
+				break;
+			case 'o':
+				choice[3] = 1;
+				break;
+			default:
+				cout << "Incorrect argument given. Try again." << endl;
+				printHelp();
+				return 0;
+		}
+	}
 	ros::init(argc, argv, "robot_driver");
 	ros::NodeHandle nh;
 
