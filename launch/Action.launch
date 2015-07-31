@@ -1,0 +1,8 @@
+<launch>
+
+  <include file="$(find pr2_head_action)/head_action.launch" />
+
+  <node name="PR2Sweep"
+        pkg="pr2_safety" type="PR2Sweep" 
+        args="h" />
+</launch>
