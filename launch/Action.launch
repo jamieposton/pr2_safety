@@ -2,7 +2,10 @@
 
   <include file="$(find pr2_head_action)/head_action.launch" />
 
-  <node name="PR2Sweep"
+    <node name="position_joint_action_node"
+          pkg="single_joint_position_action" type="single_joint_position_action" />
+
+  <!--node name="PR2Sweep"
         pkg="pr2_safety" type="PR2Sweep" 
-        args="h" />
+        args="h" /-->
 </launch>
