@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/jamieposton/hydro_ws/src/pr2_safety/build/devel/setup.sh
