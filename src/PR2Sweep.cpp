@@ -116,10 +116,7 @@ class RobotDriver{
 			while(!traj_client_L->waitForServer(ros::Duration(5.0))){
 				ROS_INFO("Waiting for the joint_trajectory_action server");
 			}
-<<<<<<< HEAD
 			
-=======
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 			//wait for head controller action server to come up 
 			while(!point_head_client_->waitForServer(ros::Duration(5.0))){
 				ROS_INFO("Waiting for the point_head_action server to come up");
@@ -242,10 +239,7 @@ class RobotDriver{
   actionlib::SimpleClientGoalState getStateL(){
     return traj_client_L->getState();
   }
-<<<<<<< HEAD
   
-=======
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 
   //! Loop forever while sending commands
   bool moveit(int* choice){
@@ -270,7 +264,6 @@ class RobotDriver{
 
 
 				if(n%3 == 2 && choice[2] == 1){
-<<<<<<< HEAD
 					lookAt("base_link", 5.0, 10.0, -2.0);
 				}
 
@@ -296,68 +289,6 @@ class RobotDriver{
 
 				if(choice[0] == 1){
 					base_cmd.linear.y = 0.25;
-=======
-					if(choice[3] == 1){
-						lookAt("base_link", 5.0, 10.0, -2.0);
-					}
-					else{
-						lookAt("base_link", 5.0, 0.0, -2.0);
-					}
-				}
-
-				if(choice[1] == 1){
-					if(choice[3] == 1){
-						float tempa[7] = {0.5, 0.0, -1.6, 3.5, 0.0, 0.0, 1.5};
-						MoveArm(tempa, 3.0);
-					}
-					else{
-						float tempa[7] = {0.0, -6.0, -3.2, -1.5, 0.0, 2.0, 0.0};
-						MoveArm(tempa, 1.5);
-						float tempb[7] = {0.0, -6.0, -3.2, 1.5, 0.0, 4.0, 0.0};
-						MoveArm(tempb, 1.5);
-					}
-				}
-
-				if(n%3 == 2 && choice[2] == 1){
-					if(choice[3] == 1){
-						lookAt("base_link", 5.0, -10.0, -2.0);
-					}
-					else{
-						lookAt("base_link", 10.0, 0.0, -2.0);
-					}
-				}
-
-				if(choice [1] == 1){
-					if(choice[3] == 1){
-						float tempc[7] = {-1.5, 0.0, -1.6, -1.5, 0.0, 2.0, 1.5};
-						MoveArm(tempc, 3.0);
-					}
-					else{
-						float tempc[7] = {0.0, 0.0, -3.2, 0.5, 0.0, 0.0, 0.0};
-						MoveArm(tempc, 1.5);
-					}
-				}
-
-				if(choice[2] == 1){
-					if(choice[3] == 1){
-						lookAt("base_link", 5.0, 10.0, 1.2);
-						lookAt("base_link", 5.0, 10.0, -2.0);
-						lookAt("base_link", 5.0, 0.0, -2.0);
-					}
-					else{
-						lookAt("base_link", 5.0, -10.0, 1.2);
-						lookAt("base_link", 5.0, -10.0, -2.0);
-						lookAt("base_link", 5.0, 0.0, -2.0);
-					}
-					
-				}
-
-				if(choice[0] == 1){
-					base_cmd.linear.y = 1.0;
-					if(choice[3] == 0){
-						base_cmd.linear.y = -1.0;
-					}
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 					for(int i = 0; i < 15; i++){	
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); // sleep
@@ -390,29 +321,17 @@ void printHelp(){
 	cout << "b to run the base" << endl;
 	cout << "a to run the arms" << endl;
 	cout << "h to run the head" << endl;
-<<<<<<< HEAD
-=======
-	cout << "o to sweep horizontally" << endl;
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 	cout << "default is to sweep vertically" << endl;
 }
 
 int main(int argc, char** argv){
 	//init the ROS node
-<<<<<<< HEAD
 	int choice[3] = {0,0,0};
 	//First is base
 	//Second is arm
 	//Third is head
 
 	//Fourth used to be vertical or horizontal arm sweeps
-=======
-	int choice[4] = {0,0,0,0};
-	//First is base
-	//Second is arm
-	//Third is head
-	//Fourth is vertical or horizontal arm sweeps
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 
 	if(argc <= 1){
 		cout << "Error: not enough arguments" << endl;
@@ -420,10 +339,6 @@ int main(int argc, char** argv){
 		return 0;
 	}
 
-<<<<<<< HEAD
-=======
-	//Currently doesn't recognize when multiple arguments are given
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 	for(int i = 1; i < argc; i++){
 		switch(argv[i][0]){
 			case 'b':
@@ -435,12 +350,6 @@ int main(int argc, char** argv){
 			case 'h':
 				choice[2] = 1;
 				break;
-<<<<<<< HEAD
-=======
-			case 'o':
-				choice[3] = 1;
-				break;
->>>>>>> fd91d61213815ece277386cf9b4671a9bd0d37be
 			default:
 				cout << "Incorrect argument given. Try again." << endl;
 				printHelp();
