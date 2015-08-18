@@ -22,9 +22,6 @@ using namespace std;
 //The error it's giving has something to do with the app_manager
 //Located in pr2_apps/pr2_app_manager. Not sure how to add that.
 
-//06.26 All values trying to be passed into the addpoint function return 0? I think?
-
-
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // Our Action interface type, provided as a typedef for convenience
@@ -196,6 +193,21 @@ class RobotDriver{
 			traj_client_->waitForResult(ros::Duration(time+1.0));
 		}
 
+		void CircleArm(float* center, float time){
+			//Time divided by 4 on each
+			//Four points around circle
+			//Start on Home plate
+			MoveArm(center, time/4);
+			center[0] -= 0.5;
+			MoveArm(center, time/4);
+			center[3] -= 1.0;
+			MoveArm(center, time/4);
+			center[0] += 0.5;
+			MoveArm(center, time/4);
+			center[3] += 1.0;
+
+		}
+
 		void MoveArmL(float* pos, float time){
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
@@ -263,6 +275,8 @@ class RobotDriver{
 			while(nh_.ok()){
 
 
+				//float test[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+				//CircleArm(test, 8.0);
 				if(n%3 == 2 && choice[2] == 1){
 					lookAt("base_link", 5.0, 10.0, -2.0);
 				}
@@ -277,8 +291,8 @@ class RobotDriver{
 				}
 
 				if(choice [1] == 1){
-					float tempc[7] = {-1.5, 0.0, -1.6, -1.5, 0.0, 2.0, 1.5};
-					MoveArm(tempc, 3.0);
+					float tempb[7] = {-1.5, 0.0, -1.6, -1.5, 0.0, 2.0, 1.5};
+					MoveArm(tempb, 3.0);
 				}
 
 				if(choice[2] == 1){
