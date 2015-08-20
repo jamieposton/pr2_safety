@@ -26,6 +26,8 @@ using namespace std;
 //Publish like 4 or something points all at once to move in a circle
 //instead of one, then hesistate, then another.
 
+//Next step: add head movement in CircleArm function, or CirclePair function.
+
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // Our Action interface type, provided as a typedef for convenience
@@ -131,14 +133,14 @@ class RobotDriver{
 		}
 
 		//! Points the high-def camera frame at a point in a given frame  
-		void lookAt(std::string frame_id, double x, double y, double z)
+		void lookAt(double x, double y, double z)
 		{
 			//the goal message we will be sending
 			pr2_controllers_msgs::PointHeadGoal goal;
 
 			//the target point, expressed in the requested frame
 			geometry_msgs::PointStamped point;
-			point.header.frame_id = frame_id;
+			point.header.frame_id = "base_link";
 			point.point.x = x; point.point.y = y; point.point.z = z;
 			goal.target = point;
 
@@ -197,36 +199,6 @@ class RobotDriver{
 			traj_client_->waitForResult(ros::Duration(time+1.0));
 		}
 
-		void CircleArm(float* center, float time){
-			//Time divided by 4 on each
-			//Four points around circle
-			//Start on Home plate
-			//MoveArm(center, time/5);
-			center[0] += 0.5;
-			center[3] += 0.75;
-			//center[5] += 1.0;
-			//MoveArm(center, time/5);
-			MoveArm(center, time);
-			center[0] -= 0.5;
-			center[3] -= 0.75;
-			//center[5] -= 2.0;
-			//MoveArm(center, time/5);
-			MoveArm(center, time);
-			center[0] += 0.5;
-			center[3] += 0.75;
-			//center[5] += 2.0;
-			MoveArm(center, time);
-			center[0] -= 0.5;
-			center[3] -= 0.75;
-			//center[5] -= 2.0;
-			//MoveArm(center, time/5);
-			MoveArm(center, time);
-			center[0] += 0.5;
-			center[3] += 0.75;
-			//center[5] += 2.0;
-			MoveArm(center, time);
-		}
-
 		void MoveArmL(float* pos, float time){
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
@@ -262,6 +234,44 @@ class RobotDriver{
 			traj_client_L->waitForResult(ros::Duration(time+1.0));
 		}
 
+		void CircleArm(float* center, float time){
+			//Two points around the circle
+			//Circle twice
+			center[0] += 0.5;
+			center[3] += 1.0;
+			MoveArm(center, time);
+			center[0] -= 0.5;
+			center[3] -= 1.0;
+			MoveArm(center, time);
+			center[0] += 0.5;
+			center[3] += 1.0;
+			MoveArm(center, time);
+			center[0] -= 0.5;
+			center[3] -= 1.0;
+			MoveArm(center, time);
+			center[0] += 0.5;
+			center[3] += 1.0;
+			MoveArm(center, time);
+		}
+
+		void CirclePair(bool flip, float *top, float *bottom, float time){
+			if(flip){
+				cout << flip << endl;
+				CircleArm(bottom, time);
+				CircleArm(top, time);
+			}
+			else{
+				CircleArm(top, time);
+				CircleArm(bottom, time);
+			}
+
+		}
+
+		void CircleGroup(float pos[4][7], float time, bool* flip){
+			CirclePair(flip[0], pos[3], pos[2], time);
+			CirclePair(flip[1], pos[1], pos[0], time);
+		}
+
   //! Returns the current state of the action
   actionlib::SimpleClientGoalState getState(){
     return traj_client_->getState();
@@ -284,48 +294,47 @@ class RobotDriver{
 			base_cmd.linear.x = base_cmd.linear.y = base_cmd.angular.z = 0;
 			cmd_vel_pub_.publish(base_cmd);
 
-			float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
+
 			if(choice[1] == 1){
+				float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
 				MoveArmL(temp, 1.5);
 			}
 
 			int n = 0;
+			bool flip[2] = {false, false};
 
 			while(nh_.ok()){
 
+				float pos[4][7] = {
+					{-0.5, 0.0, -1.6, -2.0, 0.0, 1.0, 1.5},
+					{-0.3, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5},
+					{-1.0, 0.0, -1.6, -2.0, 0.0, 1.0, 1.5},
+					{-0.8, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5}
+				};
+
+				CircleGroup(pos, 0.3, flip);
+
 				if(n%3 == 2 && choice[2] == 1){
-					lookAt("base_link", 5.0, 10.0, -2.0);
+					lookAt(5.0, 10.0, -2.0);
 				}
 
 				if(choice[1] == 1){
-					cout << "First Position" << endl;
-					float tempa[7] = {-0.5, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5};
-					CircleArm(tempa, 0.3);
-				}
-				
-				
 
-				if(n%3 == 2 && choice[2] == 1){
-					lookAt("base_link", 5.0, -10.0, -2.0);
-				}
 
-				if(choice [1] == 1){
-					cout << "Second Position" << endl;
-					float tempb[7] = {-1.0, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5};
-					CircleArm(tempb, 0.3);
+					if(n%3 == 2 && choice[2] == 1){
+						lookAt(5.0, -10.0, -2.0);
+					}
 				}
-
-				
 
 				if(choice[2] == 1){
-					lookAt("base_link", 5.0, 10.0, 1.2);
-					lookAt("base_link", 5.0, 10.0, -2.0);
-					lookAt("base_link", 5.0, 0.0, -2.0);
+					lookAt(5.0, 10.0, 1.2);
+					lookAt(5.0, 10.0, -2.0);
+					lookAt(5.0, 0.0, -2.0);
 				}
 
 				if(choice[0] == 1){
-					base_cmd.linear.y = 0.25;
-					for(int i = 0; i < 15; i++){	
+					base_cmd.linear.y = 0.5;
+					for(int i = 0; i < 20; i++){	
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); // sleep
 					}
@@ -347,6 +356,24 @@ class RobotDriver{
 				}
 
 				n++;
+				if(flip[0] == false){
+					if(flip[1] == false){
+						flip[1] = true;
+					}
+					else{
+						flip[0] = true;
+						flip[1] = false;
+ 					}
+				}
+				else{
+					if(flip[1] == false){
+						flip[1] = true;
+					}
+					else{
+						flip[0] = false;
+						flip[1] = false;
+ 					}
+				}
 			}
     return true;
   }
