@@ -22,6 +22,10 @@ using namespace std;
 //The error it's giving has something to do with the app_manager
 //Located in pr2_apps/pr2_app_manager. Not sure how to add that.
 
+//Look into creating a new move arm function so there's no hesitation on the trajectories
+//Publish like 4 or something points all at once to move in a circle
+//instead of one, then hesistate, then another.
+
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // Our Action interface type, provided as a typedef for convenience
@@ -159,7 +163,7 @@ class RobotDriver{
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
 
-			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
+			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.1);
 
 			// First, the joint names, which apply to all waypoints
 			goal.trajectory.joint_names.push_back("r_shoulder_pan_joint");
@@ -197,22 +201,37 @@ class RobotDriver{
 			//Time divided by 4 on each
 			//Four points around circle
 			//Start on Home plate
-			MoveArm(center, time/4);
-			center[0] -= 0.5;
-			MoveArm(center, time/4);
-			center[3] -= 1.0;
-			MoveArm(center, time/4);
+			//MoveArm(center, time/5);
 			center[0] += 0.5;
-			MoveArm(center, time/4);
-			center[3] += 1.0;
-
+			center[3] += 0.75;
+			//center[5] += 1.0;
+			//MoveArm(center, time/5);
+			MoveArm(center, time);
+			center[0] -= 0.5;
+			center[3] -= 0.75;
+			//center[5] -= 2.0;
+			//MoveArm(center, time/5);
+			MoveArm(center, time);
+			center[0] += 0.5;
+			center[3] += 0.75;
+			//center[5] += 2.0;
+			MoveArm(center, time);
+			center[0] -= 0.5;
+			center[3] -= 0.75;
+			//center[5] -= 2.0;
+			//MoveArm(center, time/5);
+			MoveArm(center, time);
+			center[0] += 0.5;
+			center[3] += 0.75;
+			//center[5] += 2.0;
+			MoveArm(center, time);
 		}
 
 		void MoveArmL(float* pos, float time){
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
 
-			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.5);
+			goal.trajectory.header.stamp = ros::Time::now() + ros::Duration(0.1);
 
 			// First, the joint names, which apply to all waypoints
 			goal.trajectory.joint_names.push_back("l_shoulder_pan_joint");
@@ -274,26 +293,29 @@ class RobotDriver{
 
 			while(nh_.ok()){
 
-
-				//float test[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-				//CircleArm(test, 8.0);
 				if(n%3 == 2 && choice[2] == 1){
 					lookAt("base_link", 5.0, 10.0, -2.0);
 				}
 
 				if(choice[1] == 1){
-					float tempa[7] = {0.5, 0.0, -1.6, 3.5, 0.0, 0.0, 1.5};
-					MoveArm(tempa, 3.0);
+					cout << "First Position" << endl;
+					float tempa[7] = {-0.5, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5};
+					CircleArm(tempa, 0.3);
 				}
+				
+				
 
 				if(n%3 == 2 && choice[2] == 1){
 					lookAt("base_link", 5.0, -10.0, -2.0);
 				}
 
 				if(choice [1] == 1){
-					float tempb[7] = {-1.5, 0.0, -1.6, -1.5, 0.0, 2.0, 1.5};
-					MoveArm(tempb, 3.0);
+					cout << "Second Position" << endl;
+					float tempb[7] = {-1.0, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5};
+					CircleArm(tempb, 0.3);
 				}
+
+				
 
 				if(choice[2] == 1){
 					lookAt("base_link", 5.0, 10.0, 1.2);
@@ -308,7 +330,7 @@ class RobotDriver{
 						ros::Duration(0.1).sleep(); // sleep
 					}
 				}
-				//ros::Duration(1.0).sleep(); // sleep
+				ros::Duration(1.0).sleep(); // sleep
 				/*
 				double nextTime = clock() + 5000;
 				while(clock() < 5000){			
@@ -339,7 +361,7 @@ void printHelp(){
 }
 
 int main(int argc, char** argv){
-	//init the ROS node
+
 	int choice[3] = {0,0,0};
 	//First is base
 	//Second is arm
@@ -370,6 +392,8 @@ int main(int argc, char** argv){
 				return 0;
 		}
 	}
+
+	//init the ROS node
 	ros::init(argc, argv, "robot_driver");
 	ros::NodeHandle nh;
 
