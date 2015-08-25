@@ -10,6 +10,7 @@
 #include <geometry_msgs/Twist.h>
 #include <pr2_controllers_msgs/JointTrajectoryAction.h>
 #include <pr2_controllers_msgs/SingleJointPositionAction.h>
+#include <pr2_controllers_msgs/Pr2GripperCommandAction.h>
 #include <pr2_controllers_msgs/PointHeadAction.h>
 #include <actionlib/client/simple_action_client.h>
 using namespace std;
@@ -27,6 +28,7 @@ using namespace std;
 //instead of one, then hesistate, then another.
 
 //Next step: add head movement in CircleArm function, or CirclePair function.
+//Next step: look up how to move the grippers?
 
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
@@ -35,6 +37,62 @@ typedef actionlib::SimpleActionClient<pr2_controllers_msgs::SingleJointPositionA
 
 // Our Action interface type, provided as a typedef for convenience
 typedef actionlib::SimpleActionClient<pr2_controllers_msgs::PointHeadAction> PointHeadClient;
+
+// Our Action interface type, provided as a typedef for convenience
+typedef actionlib::SimpleActionClient<pr2_controllers_msgs::Pr2GripperCommandAction> GripperClient;
+
+class Gripper{
+	private:
+	GripperClient* gripper_client_;  
+
+	public:
+	//Action client initialization
+	Gripper(){
+
+		//Initialize the client for the Action interface to the gripper controller
+		//and tell the action client that we want to spin a thread by default
+		gripper_client_ = new GripperClient("r_gripper_controller/gripper_action", true);
+
+		//wait for the gripper action server to come up 
+		while(!gripper_client_->waitForServer(ros::Duration(5.0))){
+			ROS_INFO("Waiting for the r_gripper_controller/gripper_action action server to come up");
+		}
+	}
+
+	~Gripper(){
+		delete gripper_client_;
+	}
+
+	//Open the gripper
+	void open(){
+		pr2_controllers_msgs::Pr2GripperCommandGoal open;
+		open.command.position = 0.08;
+		open.command.max_effort = -1.0;  // Do not limit effort (negative)
+
+		ROS_INFO("Sending open goal");
+		gripper_client_->sendGoal(open);
+		gripper_client_->waitForResult();
+		if(gripper_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+			ROS_INFO("The gripper opened!");
+		else
+			ROS_INFO("The gripper failed to open.");
+	}
+
+	//Close the gripper
+	void close(float pos){
+		pr2_controllers_msgs::Pr2GripperCommandGoal squeeze;
+		squeeze.command.position = pos;
+		squeeze.command.max_effort = 50.0;
+
+		ROS_INFO("Sending squeeze goal");
+		gripper_client_->sendGoal(squeeze);
+		gripper_client_->waitForResult();
+		if(gripper_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+			ROS_INFO("The gripper closed!");
+		else
+			ROS_INFO("The gripper failed to close.");
+	}
+};
 
 class Torso{
 private:
@@ -57,7 +115,7 @@ public:
   }
 
   //tell the torso to go up
-  void up(){
+  void down(){
 
     pr2_controllers_msgs::SingleJointPositionGoal Up;
     Up.position = 0.190;  //all the way up is 0.2
@@ -66,11 +124,11 @@ public:
     
     ROS_INFO("Sending up goal");
     torso_client_->sendGoal(Up);
-    //torso_client_->waitForResult();
+    torso_client_->waitForResult();
   }
 
   //tell the torso to go down
-  void down(){
+  void up(){
 
     pr2_controllers_msgs::SingleJointPositionGoal Down;
     Down.position = 0.165;
@@ -80,7 +138,8 @@ public:
     ROS_INFO("Sending down goal");
     torso_client_->sendGoal(Down);
 	 ROS_INFO("Sent down goal");
-    //torso_client_->waitForResult();
+    torso_client_->waitForResult();
+    cout << "Finished result" << endl;
   }    
 };
 
@@ -94,7 +153,7 @@ class RobotDriver{
 		//Action client for the joint trajectory action
 		//used to trigger the arm movement action
 		TrajClient* traj_client_;
-		TrajClient* traj_client_L;
+		//TrajClient* traj_client_L;
 
 		PointHeadClient* point_head_client_;
 
@@ -110,15 +169,17 @@ class RobotDriver{
 
 			// tell the action client that we want to spin a thread by default
 			traj_client_ = new TrajClient("r_arm_controller/joint_trajectory_action", true);
-			traj_client_L = new TrajClient("l_arm_controller/joint_trajectory_action", true);
+			//traj_client_L = new TrajClient("l_arm_controller/joint_trajectory_action", true);
 
 			// wait for action server to come up
 			while(!traj_client_->waitForServer(ros::Duration(5.0))){
 				ROS_INFO("Waiting for the joint_trajectory_action server");
 			}
+			/*
 			while(!traj_client_L->waitForServer(ros::Duration(5.0))){
 				ROS_INFO("Waiting for the joint_trajectory_action server");
 			}
+			*/
 			
 			//wait for head controller action server to come up 
 			while(!point_head_client_->waitForServer(ros::Duration(5.0))){
@@ -128,20 +189,20 @@ class RobotDriver{
 
 		~RobotDriver(){
 			delete traj_client_;
-			delete traj_client_L;
+			//delete traj_client_L;
 			delete point_head_client_;
 		}
 
 		//! Points the high-def camera frame at a point in a given frame  
-		void lookAt(double x, double y, double z)
-		{
+		void lookAt(double *pos){
+
 			//the goal message we will be sending
 			pr2_controllers_msgs::PointHeadGoal goal;
 
 			//the target point, expressed in the requested frame
 			geometry_msgs::PointStamped point;
 			point.header.frame_id = "base_link";
-			point.point.x = x; point.point.y = y; point.point.z = z;
+			point.point.x = pos[0]; point.point.y = pos[1]; point.point.z = pos[2];
 			goal.target = point;
 
 			//we are pointing the high-def camera frame 
@@ -198,7 +259,7 @@ class RobotDriver{
 			//wait for it to get there (abort after 2 secs to prevent getting stuck)
 			traj_client_->waitForResult(ros::Duration(time+1.0));
 		}
-
+/*
 		void MoveArmL(float* pos, float time){
 
 			pr2_controllers_msgs::JointTrajectoryGoal goal;
@@ -233,6 +294,7 @@ class RobotDriver{
 
 			traj_client_L->waitForResult(ros::Duration(time+1.0));
 		}
+		*/
 
 		void CircleArm(float* center, float time){
 			//Two points around the circle
@@ -254,32 +316,44 @@ class RobotDriver{
 			MoveArm(center, time);
 		}
 
-		void CirclePair(bool flip, float *top, float *bottom, float time){
+		void CirclePair(bool flip, float *top, float *bottom, double* lookTop, double* lookBot, float time, int choice){
 			if(flip){
-				cout << flip << endl;
+				if(choice == 1){
+					lookAt(lookBot);
+				}
 				CircleArm(bottom, time);
+				if(choice == 1){
+					lookAt(lookTop);
+				}
 				CircleArm(top, time);
 			}
 			else{
+				if(choice == 1){
+					lookAt(lookTop);
+				}
 				CircleArm(top, time);
+				if(choice == 1){
+					lookAt(lookBot);
+				}
 				CircleArm(bottom, time);
 			}
 
 		}
 
-		void CircleGroup(float pos[4][7], float time, bool* flip){
-			CirclePair(flip[0], pos[3], pos[2], time);
-			CirclePair(flip[1], pos[1], pos[0], time);
+		void CircleGroup(float pos[4][7], float time, bool* flip, double look[9][3], int& choice){
+			CirclePair(flip[0], pos[3], pos[2], look[2], look[3], time, choice);
+			CirclePair(flip[1], pos[1], pos[0], look[0], look[1], time, choice);
 		}
 
   //! Returns the current state of the action
   actionlib::SimpleClientGoalState getState(){
     return traj_client_->getState();
   }
-
+/*
   actionlib::SimpleClientGoalState getStateL(){
     return traj_client_L->getState();
   }
+  */
   
 
   //! Loop forever while sending commands
@@ -294,11 +368,12 @@ class RobotDriver{
 			base_cmd.linear.x = base_cmd.linear.y = base_cmd.angular.z = 0;
 			cmd_vel_pub_.publish(base_cmd);
 
-
+/*
 			if(choice[1] == 1){
 				float temp[7] = {0.0, 6.0, 1.5, -1.5, 0.5, 2.0, 0.0};
 				MoveArmL(temp, 1.5);
 			}
+			*/
 
 			int n = 0;
 			bool flip[2] = {false, false};
@@ -312,24 +387,36 @@ class RobotDriver{
 					{-0.8, 0.0, -1.6, -1.0, 0.0, 1.0, 1.5}
 				};
 
-				CircleGroup(pos, 0.3, flip);
+				double look[9][3] = {
+					{5.0, 2.0, -2.0},
+					{5.0, 1.0, -2.0},
+					{5.0, -4.0, -2.0},
+					{4.0, -3.0, -2.0},
 
-				if(n%3 == 2 && choice[2] == 1){
-					lookAt(5.0, 10.0, -2.0);
+					{5.0, 10.0, -2.0},
+					{5.0, -10.0, -2.0},
+					{5.0, 10.0, 1.2},
+					{5.0, 10.0, -2.0},
+					{5.0, 0.0, -2.0}
+				};
+
+				if(choice [1] == 1){
+
+					CircleGroup(pos, 1.0, flip, look, choice[2]);
 				}
 
-				if(choice[1] == 1){
+				if(n%3 == 2 && choice[2] == 1){
+					lookAt(look[4]);
+				}
 
-
-					if(n%3 == 2 && choice[2] == 1){
-						lookAt(5.0, -10.0, -2.0);
-					}
+				if(n%3 == 2 && choice[2] == 1){
+					lookAt(look[5]);
 				}
 
 				if(choice[2] == 1){
-					lookAt(5.0, 10.0, 1.2);
-					lookAt(5.0, 10.0, -2.0);
-					lookAt(5.0, 0.0, -2.0);
+					lookAt(look[6]);
+					lookAt(look[7]);
+					lookAt(look[8]);
 				}
 
 				if(choice[0] == 1){
@@ -423,11 +510,44 @@ int main(int argc, char** argv){
 	//init the ROS node
 	ros::init(argc, argv, "robot_driver");
 	ros::NodeHandle nh;
-
+/*
+	cout << "Before Torso" << endl;
 	Torso torso;
+	torso.up();
+	cout << "After Torso" << endl;
+	*/
+/*
+	Gripper gripper;
+	gripper.open();
 
-	torso.down();
+	cout << "After Gripper open" << endl;
 
+	cout << "Adjusting gripper position. o to open, c to close, e to exit and continue program." << endl;
+	bool done = true;
+	float x = 0.08;
+	char input;
+	while(done){
+		ros::Duration(0.5).sleep();
+		cout << "Enter Value: "; 
+		cin >> input;
+		switch(input){
+			case 'o':
+				x += 0.01;
+				gripper.close(x);
+				break;
+			case 'c':
+				x += -0.01;
+				gripper.close(x);
+				break;
+			case 'e':
+				done = false;
+				break;
+			default:
+				cout << "Command not recognized. Try again." << endl;
+				break;
+		}
+	}
+*/
 	RobotDriver driver(nh);
 	driver.moveit(choice);
 
