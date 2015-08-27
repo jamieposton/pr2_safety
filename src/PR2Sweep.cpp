@@ -27,8 +27,7 @@ using namespace std;
 //Publish like 4 or something points all at once to move in a circle
 //instead of one, then hesistate, then another.
 
-//Next step: add head movement in CircleArm function, or CirclePair function.
-//Next step: look up how to move the grippers?
+//Next step: Create another executable to adjust the grippers
 
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
@@ -316,23 +315,23 @@ class RobotDriver{
 			MoveArm(center, time);
 		}
 
-		void CirclePair(bool flip, float *top, float *bottom, double* lookTop, double* lookBot, float time, int choice){
+		void CirclePair(bool flip, float *top, float *bottom, double* lookTop, double* lookBot, float time, bool choice){
 			if(flip){
-				if(choice == 1){
+				if(choice == true){
 					lookAt(lookBot);
 				}
 				CircleArm(bottom, time);
-				if(choice == 1){
+				if(choice == true){
 					lookAt(lookTop);
 				}
 				CircleArm(top, time);
 			}
 			else{
-				if(choice == 1){
+				if(choice == true){
 					lookAt(lookTop);
 				}
 				CircleArm(top, time);
-				if(choice == 1){
+				if(choice == true){
 					lookAt(lookBot);
 				}
 				CircleArm(bottom, time);
@@ -340,7 +339,7 @@ class RobotDriver{
 
 		}
 
-		void CircleGroup(float pos[4][7], float time, bool* flip, double look[9][3], int& choice){
+		void CircleGroup(float pos[4][7], float time, bool* flip, double look[9][3], bool& choice){
 			CirclePair(flip[0], pos[3], pos[2], look[2], look[3], time, choice);
 			CirclePair(flip[1], pos[1], pos[0], look[0], look[1], time, choice);
 		}
@@ -357,7 +356,7 @@ class RobotDriver{
   
 
   //! Loop forever while sending commands
-  bool moveit(int* choice){
+  bool moveit(bool* choice){
 			//we will be sending commands of type "twist" for the base
 			geometry_msgs::Twist base_cmd;
 
@@ -388,7 +387,7 @@ class RobotDriver{
 				};
 
 				double look[9][3] = {
-					{5.0, 2.0, -2.0},
+					{5.0, 3.0, -2.0},
 					{5.0, 1.0, -2.0},
 					{5.0, -4.0, -2.0},
 					{4.0, -3.0, -2.0},
@@ -400,30 +399,45 @@ class RobotDriver{
 					{5.0, 0.0, -2.0}
 				};
 
-				if(choice [1] == 1){
+				if(choice [1] == true){
 
-					CircleGroup(pos, 1.0, flip, look, choice[2]);
+					CircleGroup(pos, 0.3, flip, look, choice[2]);
 				}
 
-				if(n%3 == 2 && choice[2] == 1){
+				if(n%3 == 2 && choice[2] == true){
 					lookAt(look[4]);
 				}
 
-				if(n%3 == 2 && choice[2] == 1){
+				if(n%3 == 2 && choice[2] == true){
 					lookAt(look[5]);
 				}
 
-				if(choice[2] == 1){
+				if(choice[2] == true){
 					lookAt(look[6]);
 					lookAt(look[7]);
 					lookAt(look[8]);
 				}
 
-				if(choice[0] == 1){
+				if(choice[0] == true){
+					cout << "Running Base" << endl;
+					base_cmd.linear.y = 0.5;
+					for(int i = 1; i < 5; i++){
+						cout << i/10.0 << endl;
+						base_cmd.linear.y = i/10.0;
+						cmd_vel_pub_.publish(base_cmd);
+						ros::Duration(0.1).sleep(); //sleep
+					}
 					base_cmd.linear.y = 0.5;
 					for(int i = 0; i < 20; i++){	
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); // sleep
+					}
+					cout << "-----" << endl;
+					for(int i = 5; i > 0; i--){
+						cout << i/10.0 << endl;
+						base_cmd.linear.y = i/10.0;
+						cmd_vel_pub_.publish(base_cmd);
+						ros::Duration(0.1).sleep(); //sleep
 					}
 				}
 				ros::Duration(1.0).sleep(); // sleep
@@ -438,7 +452,7 @@ class RobotDriver{
 				*/
 				base_cmd.linear.y = 0;
 				cmd_vel_pub_.publish(base_cmd);
-				if(choice[1] == 0){
+				if(choice[1] == false){
 					ros::Duration(3.0).sleep();
 				}
 
@@ -476,7 +490,7 @@ void printHelp(){
 
 int main(int argc, char** argv){
 
-	int choice[3] = {0,0,0};
+	bool choice[3] = {false,false,false};
 	//First is base
 	//Second is arm
 	//Third is head
@@ -492,13 +506,13 @@ int main(int argc, char** argv){
 	for(int i = 1; i < argc; i++){
 		switch(argv[i][0]){
 			case 'b':
-				choice[0] = 1;
+				choice[0] = true;
 				break;
 			case 'a':
-				choice[1] = 1;
+				choice[1] = true;
 				break;
 			case 'h':
-				choice[2] = 1;
+				choice[2] = true;
 				break;
 			default:
 				cout << "Incorrect argument given. Try again." << endl;
