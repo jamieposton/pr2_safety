@@ -9,14 +9,11 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <pr2_controllers_msgs/JointTrajectoryAction.h>
-#include <pr2_controllers_msgs/SingleJointPositionAction.h>
-#include <pr2_controllers_msgs/Pr2GripperCommandAction.h>
 #include <pr2_controllers_msgs/PointHeadAction.h>
 #include <actionlib/client/simple_action_client.h>
 using namespace std;
 
-//Both the example code and this were made in rosbuild, so that's a thing.
-//Maybe change it to catkin at some point. That would probs be helpful.
+//Both the example code and this were made in rosbuild.
 
 //06.14/06.15 tried changing this package to catkin, and it wasn't working very well.
 //Maybe something to do with the pr2 being made for groovy? Not really sure.
@@ -27,120 +24,10 @@ using namespace std;
 //Publish like 4 or something points all at once to move in a circle
 //instead of one, then hesistate, then another.
 
-//Next step: Create another executable to adjust the grippers
-
 typedef actionlib::SimpleActionClient< pr2_controllers_msgs::JointTrajectoryAction > TrajClient;
 
 // Our Action interface type, provided as a typedef for convenience
-typedef actionlib::SimpleActionClient<pr2_controllers_msgs::SingleJointPositionAction> TorsoClient;
-
-// Our Action interface type, provided as a typedef for convenience
 typedef actionlib::SimpleActionClient<pr2_controllers_msgs::PointHeadAction> PointHeadClient;
-
-// Our Action interface type, provided as a typedef for convenience
-typedef actionlib::SimpleActionClient<pr2_controllers_msgs::Pr2GripperCommandAction> GripperClient;
-
-class Gripper{
-	private:
-	GripperClient* gripper_client_;  
-
-	public:
-	//Action client initialization
-	Gripper(){
-
-		//Initialize the client for the Action interface to the gripper controller
-		//and tell the action client that we want to spin a thread by default
-		gripper_client_ = new GripperClient("r_gripper_controller/gripper_action", true);
-
-		//wait for the gripper action server to come up 
-		while(!gripper_client_->waitForServer(ros::Duration(5.0))){
-			ROS_INFO("Waiting for the r_gripper_controller/gripper_action action server to come up");
-		}
-	}
-
-	~Gripper(){
-		delete gripper_client_;
-	}
-
-	//Open the gripper
-	void open(){
-		pr2_controllers_msgs::Pr2GripperCommandGoal open;
-		open.command.position = 0.08;
-		open.command.max_effort = -1.0;  // Do not limit effort (negative)
-
-		ROS_INFO("Sending open goal");
-		gripper_client_->sendGoal(open);
-		gripper_client_->waitForResult();
-		if(gripper_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-			ROS_INFO("The gripper opened!");
-		else
-			ROS_INFO("The gripper failed to open.");
-	}
-
-	//Close the gripper
-	void close(float pos){
-		pr2_controllers_msgs::Pr2GripperCommandGoal squeeze;
-		squeeze.command.position = pos;
-		squeeze.command.max_effort = 50.0;
-
-		ROS_INFO("Sending squeeze goal");
-		gripper_client_->sendGoal(squeeze);
-		gripper_client_->waitForResult();
-		if(gripper_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-			ROS_INFO("The gripper closed!");
-		else
-			ROS_INFO("The gripper failed to close.");
-	}
-};
-
-class Torso{
-private:
-  TorsoClient *torso_client_;
-
-public:
-  //Action client initialization
-  Torso(){
-    
-    torso_client_ = new TorsoClient("torso_controller/position_joint_action", true);
-
-    //wait for the action server to come up
-    while(!torso_client_->waitForServer(ros::Duration(5.0))){
-      ROS_INFO("Waiting for the torso action server to come up");
-    }
-  }
-
-  ~Torso(){
-    delete torso_client_;
-  }
-
-  //tell the torso to go up
-  void down(){
-
-    pr2_controllers_msgs::SingleJointPositionGoal Up;
-    Up.position = 0.190;  //all the way up is 0.2
-    Up.min_duration = ros::Duration(2.0);
-    Up.max_velocity = 1.0;
-    
-    ROS_INFO("Sending up goal");
-    torso_client_->sendGoal(Up);
-    torso_client_->waitForResult();
-  }
-
-  //tell the torso to go down
-  void up(){
-
-    pr2_controllers_msgs::SingleJointPositionGoal Down;
-    Down.position = 0.165;
-    Down.min_duration = ros::Duration(2.0);
-    Down.max_velocity = 1.0;
-
-    ROS_INFO("Sending down goal");
-    torso_client_->sendGoal(Down);
-	 ROS_INFO("Sent down goal");
-    torso_client_->waitForResult();
-    cout << "Finished result" << endl;
-  }    
-};
 
 class RobotDriver{
 	private:
@@ -419,10 +306,8 @@ class RobotDriver{
 				}
 
 				if(choice[0] == true){
-					cout << "Running Base" << endl;
 					base_cmd.linear.y = 0.5;
 					for(int i = 1; i < 5; i++){
-						cout << i/10.0 << endl;
 						base_cmd.linear.y = i/10.0;
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); //sleep
@@ -432,9 +317,7 @@ class RobotDriver{
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); // sleep
 					}
-					cout << "-----" << endl;
 					for(int i = 5; i > 0; i--){
-						cout << i/10.0 << endl;
 						base_cmd.linear.y = i/10.0;
 						cmd_vel_pub_.publish(base_cmd);
 						ros::Duration(0.1).sleep(); //sleep
@@ -491,6 +374,7 @@ void printHelp(){
 int main(int argc, char** argv){
 
 	bool choice[3] = {false,false,false};
+	char input;
 	//First is base
 	//Second is arm
 	//Third is head
@@ -502,6 +386,24 @@ int main(int argc, char** argv){
 		printHelp();
 		return 0;
 	}
+
+	cout << endl;
+	cout << endl;
+	cout << "*****************************" << endl;
+	cout << "If you have not run the init," << endl;
+	cout << "the robot may not run correctly" << endl;
+	cout << "and may end up hitting itself." << endl;
+	cout << "Have you run the init? (y/n)" << endl;
+	cin >> input;
+	while(input != 'y' && input != 'n'){
+		cout << "Please choose either y or n" << endl;
+		cin >> input;
+	}
+	if(input == 'n'){
+		cout << "Please run the init" << endl;
+		return 0;
+	}
+	cout << "*****************************" << endl;
 
 	for(int i = 1; i < argc; i++){
 		switch(argv[i][0]){
@@ -522,46 +424,9 @@ int main(int argc, char** argv){
 	}
 
 	//init the ROS node
-	ros::init(argc, argv, "robot_driver");
+	ros::init(argc, argv, "PR2Sweep");
 	ros::NodeHandle nh;
-/*
-	cout << "Before Torso" << endl;
-	Torso torso;
-	torso.up();
-	cout << "After Torso" << endl;
-	*/
-/*
-	Gripper gripper;
-	gripper.open();
 
-	cout << "After Gripper open" << endl;
-
-	cout << "Adjusting gripper position. o to open, c to close, e to exit and continue program." << endl;
-	bool done = true;
-	float x = 0.08;
-	char input;
-	while(done){
-		ros::Duration(0.5).sleep();
-		cout << "Enter Value: "; 
-		cin >> input;
-		switch(input){
-			case 'o':
-				x += 0.01;
-				gripper.close(x);
-				break;
-			case 'c':
-				x += -0.01;
-				gripper.close(x);
-				break;
-			case 'e':
-				done = false;
-				break;
-			default:
-				cout << "Command not recognized. Try again." << endl;
-				break;
-		}
-	}
-*/
 	RobotDriver driver(nh);
 	driver.moveit(choice);
 
