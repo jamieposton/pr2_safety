@@ -32,10 +32,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jamieposton/hydro_ws/src/pr2_safety
+CMAKE_SOURCE_DIR = /home/jposton/catkin_ws/src/pr2_safety
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jamieposton/hydro_ws/src/pr2_safety/build
+CMAKE_BINARY_DIR = /home/jposton/catkin_ws/src/pr2_safety/build
 
 # Utility rule file for doxygen.
 
@@ -43,7 +43,7 @@ CMAKE_BINARY_DIR = /home/jamieposton/hydro_ws/src/pr2_safety/build
 include CMakeFiles/doxygen.dir/progress.make
 
 CMakeFiles/doxygen:
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/jamieposton/hydro_ws/src/pr2_safety/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jposton/catkin_ws/src/pr2_safety/build/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "doxygen found"
 
 doxygen: CMakeFiles/doxygen
@@ -59,6 +59,6 @@ CMakeFiles/doxygen.dir/clean:
 .PHONY : CMakeFiles/doxygen.dir/clean
 
 CMakeFiles/doxygen.dir/depend:
-	cd /home/jamieposton/hydro_ws/src/pr2_safety/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jamieposton/hydro_ws/src/pr2_safety /home/jamieposton/hydro_ws/src/pr2_safety /home/jamieposton/hydro_ws/src/pr2_safety/build /home/jamieposton/hydro_ws/src/pr2_safety/build /home/jamieposton/hydro_ws/src/pr2_safety/build/CMakeFiles/doxygen.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jposton/catkin_ws/src/pr2_safety/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jposton/catkin_ws/src/pr2_safety /home/jposton/catkin_ws/src/pr2_safety /home/jposton/catkin_ws/src/pr2_safety/build /home/jposton/catkin_ws/src/pr2_safety/build /home/jposton/catkin_ws/src/pr2_safety/build/CMakeFiles/doxygen.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/doxygen.dir/depend
 

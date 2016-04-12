@@ -3,15 +3,14 @@
 
 # Relative path conversion top directories.
 SET(CMAKE_RELATIVE_PATH_TOP_SOURCE "/usr/src/gtest")
-SET(CMAKE_RELATIVE_PATH_TOP_BINARY "/home/jamieposton/hydro_ws/src/pr2_safety/build")
+SET(CMAKE_RELATIVE_PATH_TOP_BINARY "/home/jposton/catkin_ws/src/pr2_safety/build")
 
 # Force unix paths in dependencies.
 SET(CMAKE_FORCE_UNIX_PATHS 1)
 
 # The C and CXX include file search paths:
 SET(CMAKE_C_INCLUDE_PATH
-  "/home/jamieposton/hydro_ws/src/pr2_safety/include"
-  "/opt/ros/hydro/include"
+  "/home/jposton/catkin_ws/src/pr2_safety/include"
   "/usr/src/gtest/include"
   "/usr/src/gtest"
   )
