@@ -8,6 +8,7 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/Bool.h>
 #include <pr2_controllers_msgs/JointTrajectoryAction.h>
 #include <pr2_controllers_msgs/PointHeadAction.h>
 #include <actionlib/client/simple_action_client.h>
@@ -426,6 +427,9 @@ int main(int argc, char** argv){
 	//init the ROS node
 	ros::init(argc, argv, "PR2Sweep");
 	ros::NodeHandle nh;
+
+	ros::init(argc, argv, "button_listener");
+	ros::NodeHandle pi;
 
 	RobotDriver driver(nh);
 	driver.moveit(choice);
